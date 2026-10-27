@@ -33,8 +33,8 @@ describe('solveIv', () => {
     expect(found).toHaveLength(0);
   });
 
-  it('returns nothing for an impossible CP', () => {
-    expect(solveIv({ species: MEWTWO, cp: 1, hp: 1, level: 40 })).toHaveLength(0);
+  it('rejects CP and HP below the game minimum', () => {
+    expect(() => solveIv({ species: MEWTWO, cp: 1, hp: 1, level: 40 })).toThrow(RangeError);
   });
 });
 
@@ -44,3 +44,4 @@ describe('stardust', () => {
     expect(levelRangeForStardust(123)).toBeUndefined();
   });
 });
+

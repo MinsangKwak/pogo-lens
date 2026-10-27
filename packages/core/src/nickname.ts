@@ -1,5 +1,6 @@
 'use strict';
 
+import { assertIv } from './validation.js';
 import { ivPercent, ivSum, type Iv, type Level } from './types.js';
 
 // 게임이 허용하는 닉네임 최대 글자 수
@@ -56,14 +57,17 @@ function resolve(token: string, ctx: NicknameContext): string {
 
 // 템플릿을 채우고 12자 안에 맞춘다. 넘치면 {name}부터 줄이고, 그래도 넘치면 뒤를 자른다
 export function renderNickname(template: string, ctx: NicknameContext): string {
+  assertIv(ctx.iv);
   const parts = template
     .replace(TOKEN, (_, token: string) => (token === 'name' ? NAME_SLOT : resolve(token, ctx)))
     .split(NAME_SLOT);
   const fixedLength = codePoints(parts.join('')).length;
-  const nameBudget = Math.max(0, NICKNAME_MAX_LENGTH - fixedLength);
+  const slots = parts.length - 1;
+  const nameBudget = slots === 0 ? 0 : Math.max(0, Math.floor((NICKNAME_MAX_LENGTH - fixedLength) / slots));
   const name = codePoints(ctx.speciesName).slice(0, nameBudget).join('');
   const rendered = parts.join(name);
   return codePoints(rendered).slice(0, NICKNAME_MAX_LENGTH).join('');
 }
 
 export const DEFAULT_NICKNAME_TEMPLATE = '{rank}/{total} {pct}% {name}';
+

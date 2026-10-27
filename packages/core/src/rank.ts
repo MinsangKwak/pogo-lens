@@ -1,5 +1,6 @@
 'use strict';
 
+import { assertIv, assertLevel, assertSpecies } from './validation.js';
 import { LEVELS } from './cpm.js';
 import { computeCp, statProduct } from './stats.js';
 import {
@@ -29,6 +30,7 @@ function compareIv(a: Iv, b: Iv): number {
 export function rankOwned(records: readonly ScanRecord[]): OwnedRank[] {
   const groups = new Map<string, ScanRecord[]>();
   for (const record of records) {
+    assertIv(record.iv);
     const key = speciesKey(record.speciesId, record.form);
     const group = groups.get(key);
     if (group) group.push(record);
@@ -101,8 +103,11 @@ export function pvpTable(
   league: League,
   options: PvpOptions = {},
 ): readonly PvpEntry[] {
+  assertSpecies(species);
+  if (!Object.hasOwn(LEAGUE_CP_CAP, league)) throw new RangeError('invalid league');
   const maxLevel = options.maxLevel ?? DEFAULT_MAX_LEVEL;
-  const cacheKey = `${speciesKey(species.id, species.form)}|${league}|${maxLevel}`;
+  assertLevel(maxLevel);
+  const cacheKey = `${speciesKey(species.id, species.form)}|${species.baseAtk}|${species.baseDef}|${species.baseSta}|${league}|${maxLevel}`;
   const cached = pvpCache.get(cacheKey);
   if (cached) return cached;
 
@@ -126,6 +131,10 @@ export function pvpTable(
     rank: index + 1,
     percent: top === 0 ? 0 : Math.round((row.product / top) * 1000) / 10,
   }));
+  if (pvpCache.size >= 8) {
+    const oldest = pvpCache.keys().next().value;
+    if (oldest !== undefined) pvpCache.delete(oldest);
+  }
   pvpCache.set(cacheKey, table);
   return table;
 }
@@ -136,6 +145,8 @@ export function pvpRankOf(
   league: League,
   options: PvpOptions = {},
 ): PvpEntry | undefined {
+  assertIv(iv);
   const target = ivIndex(iv);
   return pvpTable(species, league, options).find((entry) => ivIndex(entry.iv) === target);
 }
+

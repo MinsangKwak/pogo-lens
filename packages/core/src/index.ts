@@ -7,3 +7,5 @@ export * from './stardust.js';
 export * from './iv.js';
 export * from './rank.js';
 export * from './nickname.js';
+export * from './rename.js';
+

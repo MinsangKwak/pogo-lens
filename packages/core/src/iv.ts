@@ -1,5 +1,6 @@
 'use strict';
 
+import { assertIv, assertLevel, assertSpecies } from './validation.js';
 import { LEVELS, levelsBetween } from './cpm.js';
 import { levelRangeForStardust } from './stardust.js';
 import { computeCp, computeHp } from './stats.js';
@@ -51,6 +52,19 @@ function valuesFor(known: number | undefined): readonly number[] {
 
 // 화면에서 읽은 값과 일치하는 (IV, 레벨) 조합을 모두 돌려준다
 export function solveIv(query: IvQuery): IvCandidate[] {
+  assertSpecies(query.species);
+  if (![query.cp, query.hp].every((value) => Number.isInteger(value) && value >= 10)) {
+    throw new RangeError('CP and HP must be integers of at least 10');
+  }
+  if (query.level !== undefined) assertLevel(query.level);
+  assertIv({ atk: query.known?.atk === undefined ? 0 : query.known.atk, def: query.known?.def === undefined ? 0 : query.known.def, sta: query.known?.sta === undefined ? 0 : query.known.sta });
+  if (query.stars !== undefined && !Object.hasOwn(STAR_SUM_RANGE, query.stars)) {
+    throw new RangeError('invalid appraisal stars');
+  }
+  if (query.level === undefined && query.stardust !== undefined &&
+      !levelRangeForStardust(query.stardust)) {
+    throw new RangeError('unsupported stardust cost; confirm the scan manually');
+  }
   const result: IvCandidate[] = [];
   const sumRange = query.stars === undefined ? undefined : STAR_SUM_RANGE[query.stars];
   const atks = valuesFor(query.known?.atk);
@@ -82,3 +96,4 @@ export function solveIv(query: IvQuery): IvCandidate[] {
 export function uniqueIv(candidates: readonly IvCandidate[]): IvCandidate | undefined {
   return candidates.length === 1 ? candidates[0] : undefined;
 }
+
