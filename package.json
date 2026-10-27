@@ -1,0 +1,20 @@
+{
+  "name": "pogo-lens",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Android overlay for Pokémon GO that reads IVs from the screen, ranks your own Pokémon, and suggests nicknames. Kotlin shell + TypeScript core.",
+  "type": "module",
+  "workspaces": [
+    "core"
+  ],
+  "scripts": {
+    "lint": "npm run lint -w core",
+    "typecheck": "npm run typecheck -w core",
+    "test": "npm run test -w core",
+    "build": "npm run build -w core",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

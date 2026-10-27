@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PoGo Lens</string>
+    <string name="overlay_permission_title">1. 다른 앱 위에 표시 권한</string>
+    <string name="overlay_permission_button">권한 설정 열기</string>
+    <string name="capture_title">2. 화면 캡처 시작</string>
+    <string name="capture_start">오버레이 시작</string>
+    <string name="capture_stop">오버레이 중지</string>
+    <string name="status_overlay_missing">오버레이 권한이 없습니다</string>
+    <string name="status_overlay_ready">오버레이 권한 있음</string>
+    <string name="status_running">오버레이 실행 중</string>
+    <string name="status_stopped">오버레이 중지됨</string>
+    <string name="notification_channel">PoGo Lens 오버레이</string>
+    <string name="notification_title">PoGo Lens가 화면 위에 떠 있습니다</string>
+    <string name="notification_text">버튼을 누르면 현재 화면을 읽습니다</string>
+    <string name="bubble_label">IV</string>
+</resources>
