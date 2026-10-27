@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#1E88E5</color>
+    <color name="ic_launcher_background">#102839</color>
+    <color name="lens_background">#091923</color>
+    <color name="lens_depth">#163C4C</color>
+    <color name="lens_glass">#B8203948</color>
+    <color name="lens_stroke">#668CB4C4</color>
+    <color name="lens_accent">#A0E4EF</color>
+    <color name="lens_text">#F4FAFC</color>
+    <color name="lens_muted">#BBD0D8</color>
+    <color name="lens_ink">#102839</color>
+    <color name="lens_pressed">#C6F1F6</color>
 </resources>

@@ -11,3 +11,11 @@ apps/android/local.properties
 apps/android/.idea/
 apps/android/*.iml
 apps/android/captures/
+
+# Local secrets and Android signing material
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+apps/android/keystore.properties

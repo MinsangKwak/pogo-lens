@@ -9,91 +9,124 @@ import android.hardware.display.VirtualDisplay
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
+import android.os.Build
+import android.util.DisplayMetrics
 import android.os.Handler
 import android.os.Looper
-import android.util.DisplayMetrics
 import android.view.WindowManager
+import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
-// MediaProjection으로 화면 한 프레임을 Bitmap으로 떠 온다
-// 가상 디스플레이는 서비스가 살아 있는 동안 유지하고, 프레임은 요청할 때만 읽는다
+// 화면 이미지는 메모리에만 두고 요청 완료 또는 세션 종료 시 해제한다
 class ScreenCapture(
-    private val context: Context,
+    context: Context,
     resultCode: Int,
     resultData: Intent,
+    private val onStopped: () -> Unit,
 ) {
-    private val projection: MediaProjection
-    private val reader: ImageReader
-    private val display: VirtualDisplay
+    private val handler = Handler(Looper.getMainLooper())
+    private val projection: MediaProjection =
+        context.getSystemService(MediaProjectionManager::class.java)
+            .getMediaProjection(resultCode, resultData)
+    private var reader: ImageReader? = null
+    private var display: VirtualDisplay? = null
+    private var pending: CancellableContinuation<Bitmap?>? = null
+    private var released = false
+    private val callback = object : MediaProjection.Callback() {
+        override fun onStop() {
+            release()
+            onStopped()
+        }
+    }
     private val width: Int
     private val height: Int
 
     init {
-        val manager = context.getSystemService(MediaProjectionManager::class.java)
-        projection = manager.getMediaProjection(resultCode, resultData)
-        // Android 14부터 콜백 등록이 필수다. 사용자가 캡처를 끊으면 여기로 들어온다
-        projection.registerCallback(object : MediaProjection.Callback() {
-            override fun onStop() {
-                release()
-            }
-        }, Handler(Looper.getMainLooper()))
-
-        val metrics = screenMetrics()
+        val windowManager = context.getSystemService(WindowManager::class.java)
+        val metrics = DisplayMetrics()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val bounds = windowManager.maximumWindowMetrics.bounds
+            metrics.widthPixels = bounds.width()
+            metrics.heightPixels = bounds.height()
+        } else {
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getRealMetrics(metrics)
+        }
         width = metrics.widthPixels
         height = metrics.heightPixels
-        // maxImages=2: 최신 프레임 하나와 읽는 중인 프레임 하나
-        reader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
-        display = projection.createVirtualDisplay(
-            "pogo-lens",
-            width,
-            height,
-            metrics.densityDpi,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            reader.surface,
-            null,
-            null,
-        )
+        try {
+            projection.registerCallback(callback, handler)
+            val source = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
+            reader = source
+            display = projection.createVirtualDisplay(
+                "pogo-lens", width, height, context.resources.displayMetrics.densityDpi,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, source.surface, null, null,
+            )
+        } catch (error: Exception) {
+            release()
+            throw error
+        }
     }
 
-    // 다음 프레임이 들어올 때까지 기다렸다가 Bitmap으로 변환한다
     suspend fun captureFrame(): Bitmap? = suspendCancellableCoroutine { cont ->
-        reader.setOnImageAvailableListener({ r ->
-            r.setOnImageAvailableListener(null, null)
-            val image = r.acquireLatestImage() ?: run {
-                cont.resume(null)
-                return@setOnImageAvailableListener
-            }
+        val source = reader
+        if (released || source == null) {
+            cont.resume(null)
+            return@suspendCancellableCoroutine
+        }
+        check(pending == null) { "capture already pending" }
+        pending = cont
+        source.setOnImageAvailableListener({ current ->
+            if (!cont.isActive) return@setOnImageAvailableListener
+            current.setOnImageAvailableListener(null, null)
+            pending = null
             try {
-                val plane = image.planes[0]
-                val rowStride = plane.rowStride
-                val pixelStride = plane.pixelStride
-                val padding = (rowStride - pixelStride * width) / pixelStride
-                val padded = Bitmap.createBitmap(width + padding, height, Bitmap.Config.ARGB_8888)
-                padded.copyPixelsFromBuffer(plane.buffer)
-                val cropped = if (padding == 0) padded
-                else Bitmap.createBitmap(padded, 0, 0, width, height).also { padded.recycle() }
-                cont.resume(cropped)
-            } finally {
-                image.close()
+                val image = current.acquireLatestImage()
+                if (image == null) {
+                    cont.resume(null)
+                    return@setOnImageAvailableListener
+                }
+                val bitmap = image.use {
+                    val plane = it.planes[0]
+                    val padding = (plane.rowStride - plane.pixelStride * width) / plane.pixelStride
+                    val padded = Bitmap.createBitmap(width + padding, height, Bitmap.Config.ARGB_8888)
+                    try {
+                        padded.copyPixelsFromBuffer(plane.buffer)
+                        if (padding == 0) padded else Bitmap.createBitmap(padded, 0, 0, width, height)
+                            .also { padded.recycle() }
+                    } catch (error: Exception) {
+                        padded.recycle()
+                        throw error
+                    }
+                }
+                cont.resume(bitmap) { _, value, _ -> value?.recycle() }
+            } catch (error: Exception) {
+                if (cont.isActive) cont.resumeWithException(error)
             }
-        }, Handler(Looper.getMainLooper()))
-        cont.invokeOnCancellation { reader.setOnImageAvailableListener(null, null) }
+        }, handler)
+        cont.invokeOnCancellation {
+            handler.post {
+                if (pending === cont) {
+                    reader?.setOnImageAvailableListener(null, null)
+                    pending = null
+                }
+            }
+        }
     }
 
     fun release() {
-        display.release()
-        reader.close()
+        if (released) return
+        released = true
+        reader?.setOnImageAvailableListener(null, null)
+        pending?.let { if (it.isActive) it.resume(null) }
+        pending = null
+        display?.release()
+        display = null
+        reader?.close()
+        reader = null
+        projection.unregisterCallback(callback)
         projection.stop()
-    }
-
-    private fun screenMetrics(): DisplayMetrics {
-        val wm = context.getSystemService(WindowManager::class.java)
-        val bounds = wm.maximumWindowMetrics.bounds
-        return DisplayMetrics().apply {
-            widthPixels = bounds.width()
-            heightPixels = bounds.height()
-            densityDpi = context.resources.displayMetrics.densityDpi
-        }
     }
 }

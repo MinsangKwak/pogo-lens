@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.view.ViewConfiguration
 import dev.pogolens.app.R
 import kotlin.math.abs
 
@@ -65,10 +66,11 @@ class FloatingBubble(
                 MotionEvent.ACTION_MOVE -> {
                     val dx = (event.rawX - touchX).toInt()
                     val dy = (event.rawY - touchY).toInt()
-                    if (abs(dx) > TAP_SLOP || abs(dy) > TAP_SLOP) moved = true
+                    if (abs(dx) > tapSlop || abs(dy) > tapSlop) moved = true
                     if (moved) {
-                        params.x = startX + dx
-                        params.y = startY + dy
+                        val metrics = context.resources.displayMetrics
+                        params.x = (startX + dx).coerceIn(0, (metrics.widthPixels - v.width).coerceAtLeast(0))
+                        params.y = (startY + dy).coerceIn(0, (metrics.heightPixels - v.height).coerceAtLeast(0))
                         windowManager.updateViewLayout(v, params)
                     }
                 }
@@ -83,7 +85,6 @@ class FloatingBubble(
         }
     }
 
-    private companion object {
-        const val TAP_SLOP = 12
-    }
+    private val tapSlop = ViewConfiguration.get(context).scaledTouchSlop
 }
+
