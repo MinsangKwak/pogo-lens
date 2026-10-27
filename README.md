@@ -6,9 +6,11 @@ Kotlin 셸 + TypeScript 코어.
 ## 구조
 
 ```
-core/      순수 TypeScript. CP/IV 계산, 보유 순위, PvP 순위, 닉네임 템플릿. 플랫폼 의존 없음
-android/   Kotlin 셸. 오버레이 버튼, MediaProjection 캡처, (예정) OCR, (예정) 커스텀 키보드
-docs/      설계와 로드맵
+apps/
+  android/        Kotlin 셸. 오버레이 버튼, MediaProjection 캡처, (예정) OCR, (예정) 커스텀 키보드
+packages/
+  core/           순수 TypeScript. CP/IV 계산, 보유 순위, PvP 순위, 닉네임 템플릿. 플랫폼 의존 없음
+docs/             설계와 로드맵
 ```
 
 코어는 화면을 모릅니다. 셸이 화면에서 숫자를 읽어 코어에 넘기고, 코어가 돌려준 결과를 셸이 화면 위에 그립니다.
@@ -18,13 +20,13 @@ docs/      설계와 로드맵
 ```bash
 npm install
 npm run check        # lint + typecheck + test + build (core)
-npm run test -w core
+npm run test -w @pogo-lens/core
 ```
 
-Android는 Android Studio에서 `android/` 폴더를 열거나 아래로 빌드합니다.
+Android는 Android Studio에서 `apps/android/` 폴더를 열거나 아래로 빌드합니다.
 
 ```bash
-cd android && ./gradlew assembleDebug
+cd apps/android && ./gradlew assembleDebug
 ```
 
 ## 로드맵

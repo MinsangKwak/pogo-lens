@@ -8,8 +8,8 @@
 
 | 레이어 | 언어 | 책임 | 이유 |
 |---|---|---|---|
-| core | TypeScript | 계산, 순위, 이름 규칙 | 순수 함수라 테스트가 쉽고 iOS 스크린샷 모드나 웹에서 재사용 가능 |
-| android | Kotlin | 오버레이 창, 캡처, OCR, 키보드 | 전부 Android 네이티브 API라 다른 선택지가 없음 |
+| packages/core | TypeScript | 계산, 순위, 이름 규칙 | 순수 함수라 테스트가 쉽고 iOS 스크린샷 모드나 웹에서 재사용 가능 |
+| apps/android | Kotlin | 오버레이 창, 캡처, OCR, 키보드 | 전부 Android 네이티브 API라 다른 선택지가 없음 |
 
 코어를 셸에서 부르는 방법은 아직 정하지 않았다. 후보는 QuickJS 계열 JS 엔진 임베딩, 또는 코어 로직을 Kotlin으로 이식하고 TS를 참조 구현으로 두는 것. 3단계(OCR)가 끝난 뒤 결정한다.
 
