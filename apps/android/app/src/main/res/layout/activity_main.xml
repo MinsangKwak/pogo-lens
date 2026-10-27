@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/mainRoot" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:fillViewport="true" android:background="@drawable/lens_background">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="24dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/app_name" android:textColor="@color/lens_accent"
+            android:textSize="16sp" android:fontFamily="sans-serif-medium" android:letterSpacing="0.08" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="20dp" android:text="@string/home_title"
+            android:textColor="@color/lens_text" android:textSize="30sp" android:fontFamily="sans-serif-medium" />
+        <TextView style="@style/Lens.Body" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="12dp" android:text="@string/home_subtitle" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="28dp" android:orientation="vertical" android:padding="22dp"
+            android:background="@drawable/glass_panel">
+            <TextView style="@style/Lens.Title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/overlay_permission_title" />
+            <TextView android:id="@+id/overlayStatus" style="@style/Lens.Body" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="10dp" android:accessibilityLiveRegion="polite" android:text="@string/status_overlay_missing" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/overlayPermissionButton"
+                style="@style/Lens.Button.Secondary" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="14dp" android:filterTouchesWhenObscured="true" android:text="@string/overlay_permission_button" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" android:orientation="vertical" android:padding="22dp"
+            android:background="@drawable/glass_panel">
+            <TextView style="@style/Lens.Title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/capture_title" />
+            <TextView android:id="@+id/captureStatus" style="@style/Lens.Body" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="10dp" android:accessibilityLiveRegion="polite" android:text="@string/status_stopped" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/captureToggleButton"
+                style="@style/Lens.Button" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="14dp" android:filterTouchesWhenObscured="true" android:text="@string/capture_start" />
+        </LinearLayout>
+        <TextView style="@style/Lens.Body" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="24dp" android:text="@string/privacy_note" />
+        <TextView style="@style/Lens.Body" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="14dp" android:text="@string/prototype_note" />
+    </LinearLayout>
+</ScrollView>

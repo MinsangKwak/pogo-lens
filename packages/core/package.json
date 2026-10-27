@@ -1,0 +1,32 @@
+{
+  "name": "@pogo-lens/core",
+  "version": "0.1.0",
+  "description": "Pure TypeScript core: CP/IV math, ranking, nickname templates.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src test",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "eslint": "^9.39.2",
+    "globals": "^16.0.0",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.54.0",
+    "vitest": "^5.0.5"
+  }
+}

@@ -4,10 +4,18 @@ coverage/
 *.log
 
 # Android
-android/.gradle/
-android/build/
-android/app/build/
-android/local.properties
-android/.idea/
-android/*.iml
-android/captures/
+apps/android/.gradle/
+apps/android/build/
+apps/android/app/build/
+apps/android/local.properties
+apps/android/.idea/
+apps/android/*.iml
+apps/android/captures/
+
+# Local secrets and Android signing material
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+apps/android/keystore.properties

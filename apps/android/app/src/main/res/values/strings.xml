@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PoGo Lens</string>
+    <string name="overlay_permission_title">1. 다른 앱 위에 표시 권한</string>
+    <string name="overlay_permission_button">권한 설정 열기</string>
+    <string name="capture_title">2. 화면 캡처 시작</string>
+    <string name="capture_start">오버레이 시작</string>
+    <string name="capture_stop">오버레이 중지</string>
+    <string name="status_overlay_missing">오버레이 권한이 없습니다</string>
+    <string name="status_overlay_ready">오버레이 권한 있음</string>
+    <string name="status_running">오버레이 실행 중</string>
+    <string name="status_stopped">오버레이 중지됨</string>
+    <string name="notification_channel">PoGo Lens 오버레이</string>
+    <string name="notification_title">PoGo Lens가 화면 위에 떠 있습니다</string>
+    <string name="notification_text">버튼을 누르면 현재 화면을 읽습니다</string>
+    <string name="bubble_label">IV</string>
+    <string name="home_title">내 포켓몬,\n순위로 이름 짓기</string>
+    <string name="home_subtitle">게임 위에서 화면을 확인하고, 같은 종의 개체값을 비교하는 도구를 만들고 있어요.</string>
+    <string name="privacy_note">화면 캡처는 세션 동의 후 시작돼요. 현재 원본 이미지는 저장하거나 전송하지 않아요. 앱이나 실행 알림에서 중지할 수 있어요.</string>
+    <string name="prototype_note">개발 중 · 지금은 캡처 크기만 표시해요. 개체값 인식과 이름 입력은 아직 연결되지 않았어요.</string>
+    <string name="capture_start_failed">캡처를 시작하지 못했어요. 권한을 확인하고 다시 시작해 주세요.</string>
+    <string name="capture_no_frame">화면을 받지 못했어요. 게임 화면에서 다시 눌러 주세요.</string>
+    <string name="capture_failed">캡처를 중지했어요. 앱에서 다시 시작해 주세요.</string>
+    <string name="bubble_description">화면 한 장 캡처. 드래그해서 이동할 수 있어요.</string>
+    <string name="status_starting">화면 캡처 시작을 기다리고 있어요</string>
+</resources>
+

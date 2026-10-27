@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.PogoLens" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/lens_accent</item>
+        <item name="colorOnPrimary">@color/lens_ink</item>
+        <item name="android:colorBackground">@color/lens_background</item>
+        <item name="android:statusBarColor">@color/lens_background</item>
+        <item name="android:navigationBarColor">@color/lens_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:fontFamily">sans</item>
+    </style>
+    <style name="Lens.Body" parent="">
+        <item name="android:textColor">@color/lens_muted</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:lineSpacingExtra">4dp</item>
+    </style>
+    <style name="Lens.Title" parent="">
+        <item name="android:textColor">@color/lens_text</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    <style name="Lens.Button" parent="Widget.Material3.Button">
+        <item name="android:minHeight">56dp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">@color/lens_ink</item>
+        <item name="backgroundTint">@color/lens_accent</item>
+        <item name="cornerRadius">18dp</item>
+    </style>
+    <style name="Lens.Button.Secondary" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">56dp</item>
+        <item name="android:textColor">@color/lens_accent</item>
+        <item name="strokeColor">@color/lens_stroke</item>
+        <item name="cornerRadius">18dp</item>
+    </style>
+</resources>
