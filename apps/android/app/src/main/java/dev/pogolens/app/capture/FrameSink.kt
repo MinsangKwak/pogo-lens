@@ -2,7 +2,7 @@ package dev.pogolens.app.capture
 
 import android.graphics.Bitmap
 
-// 캡처된 프레임을 받아 처리하는 다음 단계. 지금은 OCR 자리만 잡아 둔다
+// Bitmap은 호출 동안만 빌린다. 반환 후 재사용하지 않고 취소 시 후속 처리를 중단한다
 interface FrameSink {
     suspend fun onFrame(frame: Bitmap): FrameResult
 }
@@ -17,3 +17,4 @@ class EchoFrameSink : FrameSink {
     override suspend fun onFrame(frame: Bitmap): FrameResult =
         FrameResult.Text("${frame.width}x${frame.height}")
 }
+

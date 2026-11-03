@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.content.res.Configuration
 import android.os.Build
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
@@ -15,11 +16,14 @@ import androidx.lifecycle.lifecycleScope
 import dev.pogolens.app.MainActivity
 import dev.pogolens.app.R
 import dev.pogolens.app.capture.EchoFrameSink
+import dev.pogolens.app.capture.CaptureStopReason
 import dev.pogolens.app.capture.FrameResult
 import dev.pogolens.app.capture.FrameSink
 import dev.pogolens.app.capture.ScreenCapture
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -33,19 +37,42 @@ class OverlayService : LifecycleService() {
     private var bubble: FloatingBubble? = null
     private var capture: ScreenCapture? = null
     private var scanJob: Job? = null
+    private var stopping = false
+    private var lastOrientation = Configuration.ORIENTATION_UNDEFINED
     private val sink: FrameSink = EchoFrameSink()
+
+    override fun onCreate() {
+        super.onCreate()
+        lastOrientation = resources.configuration.orientation
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val orientationChanged = lastOrientation != Configuration.ORIENTATION_UNDEFINED &&
+            newConfig.orientation != Configuration.ORIENTATION_UNDEFINED &&
+            lastOrientation != newConfig.orientation
+        if (newConfig.orientation != Configuration.ORIENTATION_UNDEFINED) {
+            lastOrientation = newConfig.orientation
+        }
+        if (orientationChanged && capture != null && !stopping) {
+            Toast.makeText(this, R.string.capture_size_changed, Toast.LENGTH_LONG).show()
+            stopCaptureSession()
+        }
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
         if (intent?.action == ACTION_STOP) {
-            stopSelf()
+            stopCaptureSession()
             return START_NOT_STICKY
         }
+
+        if (stopping) return START_NOT_STICKY
 
         val resultCode = intent?.getIntExtra(EXTRA_RESULT_CODE, 0) ?: 0
         val resultData = intent?.getParcelableExtraCompat(EXTRA_RESULT_DATA)
         if (resultData == null) {
-            stopSelf()
+            stopCaptureSession()
             return START_NOT_STICKY
         }
 
@@ -54,18 +81,28 @@ class OverlayService : LifecycleService() {
         // 캡처 객체는 포그라운드로 올라간 뒤에 만들어야 한다. 순서가 바뀌면 SecurityException
         try {
             startForegroundCompat()
-            capture = ScreenCapture(this, resultCode, resultData, onStopped = { stopSelf() })
+            capture = ScreenCapture(this, resultCode, resultData, onStopped = { reason ->
+                if (!stopping && reason != CaptureStopReason.SYSTEM) {
+                    val message = if (reason == CaptureStopReason.CONTENT_RESIZED) {
+                        R.string.capture_size_changed
+                    } else {
+                        R.string.capture_start_failed
+                    }
+                    Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                }
+                stopCaptureSession()
+            })
             bubble = FloatingBubble(this, onTap = ::onBubbleTapped).also { it.show() }
             mutableOverlayState.value = OverlayState.RUNNING
         } catch (error: Exception) {
             Toast.makeText(this, R.string.capture_start_failed, Toast.LENGTH_LONG).show()
-            stopSelf()
+            stopCaptureSession()
         }
         return START_NOT_STICKY
     }
 
     private fun onBubbleTapped() {
-        if (scanJob?.isActive == true) return
+        if (stopping || scanJob?.isActive == true) return
         val source = capture ?: return
         scanJob = lifecycleScope.launch {
             try {
@@ -76,6 +113,8 @@ class OverlayService : LifecycleService() {
                 } finally {
                     frame?.recycle()
                 }
+                currentCoroutineContext().ensureActive()
+                if (stopping || source !== capture) return@launch
                 val message = when (result) {
                     is FrameResult.Text -> result.summary
                     is FrameResult.Failure -> result.reason
@@ -84,21 +123,34 @@ class OverlayService : LifecycleService() {
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
+                if (stopping || source !== capture) return@launch
                 Toast.makeText(this@OverlayService, R.string.capture_failed, Toast.LENGTH_LONG).show()
-                stopSelf()
+                stopCaptureSession()
             }
         }
     }
 
     override fun onDestroy() {
+        stopping = true
+        releaseSessionResources()
+        mutableOverlayState.value = OverlayState.STOPPED
+        super.onDestroy()
+    }
+
+    private fun stopCaptureSession() {
+        if (stopping) return
+        stopping = true
+        releaseSessionResources()
+        stopSelf()
+    }
+
+    private fun releaseSessionResources() {
         scanJob?.cancel()
         scanJob = null
         bubble?.hide()
         bubble = null
         capture?.release()
         capture = null
-        mutableOverlayState.value = OverlayState.STOPPED
-        super.onDestroy()
     }
 
     private fun startForegroundCompat() {
@@ -175,4 +227,5 @@ class OverlayService : LifecycleService() {
         }
     }
 }
+
 

@@ -126,11 +126,12 @@ export function pvpTable(
 
   rows.sort((a, b) => b.product - a.product || b.cp - a.cp || ivIndex(b.iv) - ivIndex(a.iv));
   const top = rows[0]?.product ?? 0;
-  const table: PvpEntry[] = rows.map((row, index) => ({
+  const table: readonly PvpEntry[] = Object.freeze(rows.map((row, index) => Object.freeze({
     ...row,
+    iv: Object.freeze({ ...row.iv }),
     rank: index + 1,
     percent: top === 0 ? 0 : Math.round((row.product / top) * 1000) / 10,
-  }));
+  })));
   if (pvpCache.size >= 8) {
     const oldest = pvpCache.keys().next().value;
     if (oldest !== undefined) pvpCache.delete(oldest);
@@ -149,4 +150,5 @@ export function pvpRankOf(
   const target = ivIndex(iv);
   return pvpTable(species, league, options).find((entry) => ivIndex(entry.iv) === target);
 }
+
 

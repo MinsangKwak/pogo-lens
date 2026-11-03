@@ -19,12 +19,14 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
+enum class CaptureStopReason { SYSTEM, CONTENT_RESIZED, CONFIGURATION_FAILED }
+
 // 화면 이미지는 메모리에만 두고 요청 완료 또는 세션 종료 시 해제한다
 class ScreenCapture(
     context: Context,
     resultCode: Int,
     resultData: Intent,
-    private val onStopped: () -> Unit,
+    private val onStopped: (CaptureStopReason) -> Unit,
 ) {
     private val handler = Handler(Looper.getMainLooper())
     private val projection: MediaProjection =
@@ -34,14 +36,37 @@ class ScreenCapture(
     private var display: VirtualDisplay? = null
     private var pending: CancellableContinuation<Bitmap?>? = null
     private var released = false
+    private val sizePolicy = CaptureSizePolicy()
+    private var initialSizeReady = Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+    private var width = 0
+    private var height = 0
+    private val densityDpi = context.resources.displayMetrics.densityDpi
     private val callback = object : MediaProjection.Callback() {
         override fun onStop() {
             release()
-            onStopped()
+            onStopped(CaptureStopReason.SYSTEM)
+        }
+
+        override fun onCapturedContentResize(width: Int, height: Int) {
+            if (released) return
+            when (sizePolicy.accept(width, height)) {
+                CaptureSizeDecision.KEEP -> Unit
+                CaptureSizeDecision.CONFIGURE_INITIAL -> {
+                    try {
+                        configureInitialSize(width, height)
+                        initialSizeReady = true
+                    } catch (error: Exception) {
+                        release()
+                        onStopped(CaptureStopReason.CONFIGURATION_FAILED)
+                    }
+                }
+                CaptureSizeDecision.STOP -> {
+                    release()
+                    onStopped(CaptureStopReason.CONTENT_RESIZED)
+                }
+            }
         }
     }
-    private val width: Int
-    private val height: Int
 
     init {
         val windowManager = context.getSystemService(WindowManager::class.java)
@@ -61,7 +86,7 @@ class ScreenCapture(
             val source = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
             reader = source
             display = projection.createVirtualDisplay(
-                "pogo-lens", width, height, context.resources.displayMetrics.densityDpi,
+                "pogo-lens", width, height, densityDpi,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, source.surface, null, null,
             )
         } catch (error: Exception) {
@@ -72,7 +97,7 @@ class ScreenCapture(
 
     suspend fun captureFrame(): Bitmap? = suspendCancellableCoroutine { cont ->
         val source = reader
-        if (released || source == null) {
+        if (released || source == null || !initialSizeReady) {
             cont.resume(null)
             return@suspendCancellableCoroutine
         }
@@ -116,6 +141,23 @@ class ScreenCapture(
         }
     }
 
+    private fun configureInitialSize(capturedWidth: Int, capturedHeight: Int) {
+        if (capturedWidth == width && capturedHeight == height) return
+        val currentDisplay = checkNotNull(display)
+        val next = ImageReader.newInstance(capturedWidth, capturedHeight, PixelFormat.RGBA_8888, 2)
+        try {
+            currentDisplay.resize(capturedWidth, capturedHeight, densityDpi)
+            currentDisplay.surface = next.surface
+        } catch (error: Exception) {
+            next.close()
+            throw error
+        }
+        reader?.close()
+        reader = next
+        width = capturedWidth
+        height = capturedHeight
+    }
+
     fun release() {
         if (released) return
         released = true
@@ -130,3 +172,4 @@ class ScreenCapture(
         projection.stop()
     }
 }
+
