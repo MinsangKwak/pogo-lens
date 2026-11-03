@@ -76,4 +76,4 @@ MediaProjection 세션은 사용자가 허용한 앱 또는 화면 영역을 계
 
 ## 2026-11-03 확장 전 예방 조치
 
-관측값과 개체·닉네임 이력을 분리하고 미확인 수치 덮어쓰기, 늦은 작업 결과, 오래된 이름 제안 적용, 보호된 이름 변경, PvP 캐시 변조를 차단했다. 동작 계약과 아직 연결하지 않은 기능의 선행 조건은 [개발 가드](DEVELOPMENT_GUARDS.md)에 기록했다. 코어는 49개 테스트·lint·typecheck·build 통과. 이번 Android 변경은 이 작업 환경에 SDK·Gradle이 없어 XML 파싱만 확인했으며, 기존 위 assembleDebug 성공 기록과 구분한다. 이번 PR의 원격 CI 결과와 실제 기기 검증을 추가 확인해야 한다.
+관측값과 개체·닉네임 이력을 분리하고 미확인 수치 덮어쓰기, 늦은 작업 결과, 오래된 이름 제안 적용, 보호된 이름 변경, PvP 캐시 변조를 차단했다. 동작 계약과 아직 연결하지 않은 기능의 선행 조건은 [개발 가드](DEVELOPMENT_GUARDS.md)에 기록했다. 코어는 49개 테스트·lint·typecheck·build 통과. 이번 Android 변경은 로컬 환경에 SDK·Gradle이 없어 XML 파싱 후 원격 CI에서 검증했다. [checks 실행](https://github.com/MinsangKwak/pogo-lens/actions/runs/41586755908)에서 코어 검사와 Android testDebugUnitTest·lintDebug·assembleDebug가 모두 통과했다. 실제 기기·게임 연동 검증은 별도다.
