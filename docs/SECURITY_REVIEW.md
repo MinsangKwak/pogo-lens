@@ -64,7 +64,7 @@ MediaProjection 세션은 사용자가 허용한 앱 또는 화면 영역을 계
 - **중복과 오삭제:** 스캔 ID는 앱 기록 ID이며 게임의 고유 개체 ID가 아니다. 같은 수치만으로 다른 개체를 합치지 않는다.
 - **교환 오작동:** 좌표 자동 입력은 정렬·스크롤·상대 상태 변화를 다루지 못한다. 이번 작업에서 구현하지 않았다.
 - **미래 키보드:** IME는 민감한 입력을 볼 수 있으므로 별도 위협 모델과 개인정보 처리 원칙 없이는 추가하지 않는다.
-- **화면 규격:** 캡처 영역 변경 콜백과 OCR 영역 맞춤은 미구현이다. 지원 규격과 방향을 정하고 기기 fixture를 확보해야 한다.
+- **화면 규격:** Android 14+ 최초 공유 크기를 반영하고 이후 크기 변경은 중지하며, 전 지원 버전에서 회전 시 중지한다. Android 10~13의 동일 방향 다중 창 크기 변경과 OCR 영역 맞춤은 별도 검증이 필요하다.
 - **공급망:** Gradle 배포 ZIP의 공식 SHA-256을 확인해 wrapper 설정에 고정했다. AndroidX·Kotlin 의존성, 릴리스 서명·키 보관, 데이터 출처·라이선스는 배포 전 별도 점검한다.
 
 ## 참고 문서
@@ -72,3 +72,8 @@ MediaProjection 세션은 사용자가 허용한 앱 또는 화면 영역을 계
 - [Android MediaProjection 수명과 콜백](https://developer.android.com/media/grow/media-projection)
 - [Android tapjacking와 터치 가림 방어](https://developer.android.com/privacy-and-security/risks/tapjacking)
 - [제품 로드맵](ROADMAP.md)
+
+
+## 2026-11-03 확장 전 예방 조치
+
+관측값과 개체·닉네임 이력을 분리하고 미확인 수치 덮어쓰기, 늦은 작업 결과, 오래된 이름 제안 적용, 보호된 이름 변경, PvP 캐시 변조를 차단했다. 동작 계약과 아직 연결하지 않은 기능의 선행 조건은 [개발 가드](DEVELOPMENT_GUARDS.md)에 기록했다. 코어는 49개 테스트·lint·typecheck·build 통과. 이번 Android 변경은 이 작업 환경에 SDK·Gradle이 없어 XML 파싱만 확인했으며, 기존 위 assembleDebug 성공 기록과 구분한다. 이번 PR의 원격 CI 결과와 실제 기기 검증을 추가 확인해야 한다.

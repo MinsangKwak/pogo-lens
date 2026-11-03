@@ -35,6 +35,18 @@ describe('rankOwned', () => {
 });
 
 describe('pvpTable', () => {
+  it('prevents callers from corrupting a cached row, nested IV or the table array', () => {
+    const table = pvpTable(AZUMARILL, 'great');
+    const first = table[0];
+    if (!first) throw new Error('missing fixture entry');
+    const before = { ...first, iv: { ...first.iv } };
+    expect(() => Object.assign(first, { rank: 999 })).toThrow(TypeError);
+    expect(() => Object.assign(first.iv, { atk: 999 })).toThrow(TypeError);
+    expect(() => Object.assign(table, { 0: { ...first, rank: 999 } })).toThrow(TypeError);
+    expect(pvpTable(AZUMARILL, 'great')[0]).toEqual(before);
+    expect(pvpRankOf(AZUMARILL, before.iv, 'great')).toEqual(before);
+  });
+
   it('covers all 4096 combinations under the Great League cap', () => {
     const table = pvpTable(AZUMARILL, 'great');
     expect(table).toHaveLength(4096);
@@ -71,3 +83,4 @@ describe('pvpTable', () => {
     expect(capped.every((e) => e.level <= 40)).toBe(true);
   });
 });
+

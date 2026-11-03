@@ -29,10 +29,11 @@ export function suggestOwnedNicknames(
     const suggestedNickname = renderNickname(template, {
       speciesName: name,
       iv: record.iv,
-      level: record.level,
+      ...(record.level === undefined ? {} : { level: record.level }),
       ownedRank: entry.rank,
       ownedTotal: entry.total,
     });
     return { ...entry, suggestedNickname, changed: record.nickname !== suggestedNickname };
   });
 }
+

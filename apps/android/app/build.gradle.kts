@@ -39,4 +39,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.service)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.kotlinx.coroutines.android)
+    testImplementation("junit:junit:4.13.2")
 }
+

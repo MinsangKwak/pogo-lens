@@ -21,7 +21,9 @@
     <string name="capture_start_failed">캡처를 시작하지 못했어요. 권한을 확인하고 다시 시작해 주세요.</string>
     <string name="capture_no_frame">화면을 받지 못했어요. 게임 화면에서 다시 눌러 주세요.</string>
     <string name="capture_failed">캡처를 중지했어요. 앱에서 다시 시작해 주세요.</string>
+    <string name="capture_size_changed">화면이나 공유 영역의 크기가 바뀌어 캡처를 중지했어요. 방향과 공유 영역을 정한 뒤 앱에서 다시 시작해 주세요.</string>
     <string name="bubble_description">화면 한 장 캡처. 드래그해서 이동할 수 있어요.</string>
     <string name="status_starting">화면 캡처 시작을 기다리고 있어요</string>
 </resources>
+
 

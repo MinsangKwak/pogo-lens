@@ -20,17 +20,18 @@ export interface Iv {
 // 레벨은 1~51, 0.5 단위
 export type Level = number;
 
-// 한 번의 스캔으로 확정된 포켓몬 한 마리
+// 앱 내부의 고정 ID로 관리하는 개체. 읽지 못한 값은 생략한다
 export interface ScanRecord {
   readonly id: string;
   readonly speciesId: number;
   readonly form?: string;
-  readonly cp: number;
-  readonly hp: number;
-  readonly level: Level;
+  readonly cp?: number;
+  readonly hp?: number;
+  readonly level?: Level;
   readonly iv: Iv;
   readonly scannedAt: number;
   readonly nickname?: string;
+  readonly nicknameLocked?: boolean;
 }
 
 export const IV_MIN = 0;
@@ -54,3 +55,4 @@ export function isValidIv(iv: Iv): boolean {
 export function speciesKey(speciesId: number, form?: string): string {
   return form ? `${speciesId}:${form}` : `${speciesId}`;
 }
+
