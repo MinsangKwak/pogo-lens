@@ -43,6 +43,7 @@ export function Button({
       accessibilityLabel={label}
       accessibilityHint={hint}
       accessibilityState={{ disabled: !!disabled || !!busy, busy: !!busy }}
+      aria-busy={!!busy}
       disabled={disabled || busy}
       onPress={onPress}
       style={({ pressed }) => [
@@ -87,6 +88,7 @@ export function Choice({
       accessibilityRole="radio"
       accessibilityLabel={label}
       accessibilityState={{ selected, disabled: !!disabled }}
+      aria-checked={selected}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [

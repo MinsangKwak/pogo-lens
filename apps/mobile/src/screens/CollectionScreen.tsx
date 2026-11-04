@@ -291,6 +291,7 @@ function Filter({
       accessibilityRole="button"
       accessibilityLabel={`${label} 보기`}
       accessibilityState={{ selected }}
+      aria-pressed={selected}
       onPress={onPress}
       style={[styles.filter, selected && styles.filterSelected]}
     >

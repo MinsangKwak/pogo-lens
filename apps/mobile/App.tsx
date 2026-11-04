@@ -143,6 +143,7 @@ function LensApp() {
             accessibilityRole="tab"
             accessibilityLabel={item.label}
             accessibilityState={{ selected: tab === item.id }}
+            aria-selected={tab === item.id}
             onPress={() => setTab(item.id)}
             style={({ pressed }) => [
               styles.tab,
