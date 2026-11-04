@@ -1,4 +1,5 @@
 #import "PogoLensCapture.h"
+#import <React-RCTAppDelegate/RCTDefaultReactNativeFactoryDelegate.h>
 #import "PogoLens-Swift.h"
 
 @implementation PogoLensCapture
