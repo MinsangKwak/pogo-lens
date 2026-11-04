@@ -1,75 +1,79 @@
 # 아키텍처와 결정 사항
 
-## 한 줄 요약
+React Native가 Android·iOS의 화면과 TypeScript 계산을 연결하고, 운영체제 API가 필요한 캡처만 네이티브 어댑터로 분리합니다. RN 0.88.1·React 19.3.0의 New Architecture를 사용하며 WebView나 별도 Kotlin·Swift 계산 복제본을 두지 않습니다.
 
-플로팅 버튼 → 화면 캡처 → 숫자 읽기 → 코어 계산 → 결과를 화면 위에 표시. Poke Genie, Calcy IV, GoIV가 쓰는 패턴과 같다.
+## 데이터 흐름
 
-## 왜 이렇게 나눴나
+```mermaid
+flowchart TD
+  A["Kotlin · Swift 캡처"] --> B["미확인 후보"]
+  M["직접 입력"] --> B
+  B --> C["사용자 값·중복 확인"]
+  C --> D["확인 완료 기록 저장"]
+  D --> E["공유 core 순위·이름 계산"]
+  E --> F["이름 검토·복사"]
+  F --> G["게임 수동 적용 후 확인"]
+  G --> D
+```
 
-| 레이어 | 언어 | 책임 | 이유 |
-|---|---|---|---|
-| packages/core | TypeScript | 계산, 순위, 이름 규칙 | 순수 함수라 테스트가 쉽고 iOS 스크린샷 모드나 웹에서 재사용 가능 |
-| apps/android | Kotlin | 오버레이 창, 캡처, OCR, 키보드 | 전부 Android 네이티브 API라 다른 선택지가 없음 |
+웹에서는 같은 화면·코어·워크플로를 실행하되 캡처를 제공하지 않습니다. 마지막 단계는 `web-simulation` 입력 연습이고, 기록은 현재 탭의 메모리에만 유지합니다.
 
-코어를 셸에서 부르는 방법은 아직 정하지 않았다. 후보는 QuickJS 계열 JS 엔진 임베딩, 또는 코어 로직을 Kotlin으로 이식하고 TS를 참조 구현으로 두는 것. OCR·저장 흐름을 연결하기 전에 결정한다. 현재 Android에서 TypeScript가 실행되는 것은 아니다.
+## 책임과 경계
 
-## 파이프라인
+| 계층        | 소유 경로                                         | 책임                                                         |
+| ----------- | ------------------------------------------------- | ------------------------------------------------------------ |
+| 공통 UI     | `apps/mobile/src/screens`, `src/ui`               | 관측·보유·설정, 값 확인, 접근성 라벨, 이름 검토              |
+| 컨트롤러    | `apps/mobile/src/controller/useLensController.ts` | 초기 로드, 후보 연결, 저장 후 상태 반영, 작업 중복·오류 관리 |
+| workflow    | `packages/workflow`                               | 확인 상태 전이, 스키마 검증, 명시적 중복 연결, 적용 출처     |
+| core        | `packages/core`                                   | CP·HP·IV, 종·폼별 순위, 이름 템플릿·보호·오래된 제안 검사    |
+| 저장 어댑터 | `apps/mobile/src/storage`                         | 네이티브 AsyncStorage 3 / 웹 메모리, 내보내기·삭제           |
+| 캡처 어댑터 | `apps/mobile/android`, `apps/mobile/ios`          | 시스템 동의, 프레임 수명·중지, 제한된 후보 전달              |
 
-1. **캡처**: `ScreenCapture`가 MediaProjection + VirtualDisplay + ImageReader로 한 프레임을 Bitmap으로 뜬다. 가상 디스플레이는 서비스가 살아 있는 동안 유지한다.
-2. **읽기** (예정): `FrameSink` 구현체가 Bitmap을 받아 다음을 뽑는다.
-   - 상세 화면: 이름, CP, HP, 강화 모래 비용(OCR), 레벨 아크의 점 위치(픽셀)
-   - 평가 화면: 공격/방어/체력 바 길이(픽셀) → IV 확정. 이 경로가 가장 정확하다
-3. **계산**: `solveIv`로 (IV, 레벨) 후보를 구하고, 평가 바를 읽었어도 사용자 확인 전에는 미확정 후보로 두며, 확인한 필드만 확정한다.
-4. **순위** (저장·화면 연결 예정): 스캔 기록을 로컬 DB에 쌓고 `rankOwned`로 같은 종 내 순위를, `pvpRankOf`로 리그 순위를 구한다.
-5. **이름** (Android 입력 연결 예정): `renderNickname`이 템플릿을 12자 안에 맞춘다. 셸은 이 문자열을 클립보드 또는 커스텀 키보드로 넘긴다.
+`src/native/NativePogoLensCapture.ts`가 Codegen TurboModule 명세입니다. `getState`, `getPendingScans`, 시작·중지·초기화·복사를 Promise API로 제공하며 상태와 후보 응답은 `protocolVersion: 1`의 JSON입니다. JS 경계에서 버전·필드·크기·목록 길이를 검사합니다. 원본 프레임을 JS로 전달하지 않습니다.
 
-## 코어 모듈
+## Android 캡처
 
-- `cpm.ts`: 레벨 1~51 CP 배수 표. 게임 마스터가 바뀌면 여기만 갱신
-- `stats.ts`: CP, HP, PvP 스탯 곱
-- `stardust.ts`: 강화 비용 → 레벨 범위
-- `iv.ts`: 화면 값으로 IV 역산. 레벨, 모래, 별 개수, 평가 바를 제약으로 받음
-- `rank.ts`: 보유 순위(동점 공유), 리그별 4096 조합 순위(종별 캐시)
-- `collection.ts`: 사용자 확인 관측과 고정 ID 개체 연결, 미확인 값 보존
-- `rename-plan.ts`: 버전이 있는 변경 대기 제안, 보호·오래된 제안 검사, 적용 이력
-- `nickname.ts`: 토큰 템플릿. `{name}`을 먼저 줄이고, 그래도 넘치면 뒤를 자름
+Android 최소 타깃은 API 29입니다. Kotlin의 `OverlayService`가 플로팅 버튼과 MediaProjection 포그라운드 서비스를 관리합니다. 사용자가 표시 권한과 세션 동의를 직접 허용하며 알림에서 중지할 수 있습니다.
 
-## Android 제약
+현재 `FrameSink`는 캡처 시각과 프레임 크기만 `CaptureMailbox`에 남깁니다. **Android OCR과 종·IV 자동 채움은 구현하지 않았습니다.** 후보를 열면 값은 수동 입력합니다. 메타데이터 대기열은 최대 20개·24시간이며 이미지 파일은 저장하지 않습니다.
 
-- 오버레이 권한은 설정 화면에서 사용자가 직접 켠다. 앱이 대신 켤 수 없다.
-- MediaProjection 동의는 세션마다 다시 받는다. 토큰 저장과 재사용은 불가.
-- Android 14 이상에서는 포그라운드 서비스 타입 `mediaProjection`을 선언하고, 포그라운드로 올린 뒤에 프로젝션을 만들어야 한다. 순서가 바뀌면 SecurityException.
-- 캡처 프레임에는 우리 플로팅 버튼도 찍힌다. OCR 영역에서 버튼 위치를 제외하거나, 캡처 직전에 버튼을 잠깐 숨긴다.
+프레임 연타·시간 초과·종료 콜백을 다루고, 지원 버전의 회전과 공유 영역 변경 시 세션을 중지하도록 방어합니다. 실제 권한 창, 앱 단위 공유, 기기별 콜백 순서는 실기기 검증 대상입니다.
 
-## 현재 경계와 다음 결정
+## iOS 실시간 캡처
 
-- 현재 게임 입력 자동화, 접근성 서비스, 게임 서버 호출을 구현하지 않았다.
-- 교환 자동화는 사용자 아이디어로 남겨 두며, 정책·오동작·대상 확인·복구 불가 위험을 검토한 별도 결정이 필요하다. 현재 범위는 개체 비교와 이름 제안이다.
-- 종 데이터는 fixture만 있으며 전체 종 데이터 내장과 버전 관리는 미구현이다.
-- 캡처 이미지는 메모리에서만 처리하고 파일·로그·네트워크로 내보내지 않는다.
+| 코드 경로   | 방식                                                              | 전제                                    |
+| ----------- | ----------------------------------------------------------------- | --------------------------------------- |
+| iOS 15.1–26 | ReplayKit 시스템 picker → `PogoLensBroadcast/SampleHandler.swift` | 호스트·확장의 같은 App Group, 실제 기기 |
+| iOS 27+     | `ModernScreenCapture.swift`의 ScreenCaptureKit picker·SCStream    | iOS 27 SDK가 포함된 빌드, 실제 기기     |
 
-## 캡처 수명과 상태
+`PogoLensCaptureCoordinator`가 실행 경로를 선택합니다. ScreenCaptureKit이 없는 SDK로 만든 빌드는 iOS 27에서 캡처 불가 상태를 알립니다. 시뮬레이터도 실시간 캡처를 비활성화합니다. 두 경로가 소스에 연결되어 있어도 기기 동작 검증 완료를 뜻하지 않습니다.
 
-`OverlayService.state`가 STOPPED → STARTING → RUNNING을 관리한다. MainActivity는 활성 상태에서 이 값을 구독한다. 중복 서비스 시작과 캡처 연타를 막으며, 프레임을 3초 안에 받지 못하면 다시 시도할 수 있도록 안내한다.
+공통 `CapturePipeline`은 사용자 시작 세션 안에서 최대 초당 1개 프레임을 Vision으로 분석합니다. CP·HP와 평가 라벨이 함께 있는 경우의 짧은 텍스트만 전달하고, 일반 자유 텍스트는 버립니다. 종과 IV 바를 자동 판독하거나 필드를 자동 확정하지 않습니다. 현재 UI에서 종·IV와 필요한 CP·HP를 직접 확인합니다.
 
-`ScreenCapture`는 프로젝션 종료 시 대기 중인 요청, ImageReader, VirtualDisplay를 정리하고 서비스도 중지시킨다. 정리는 중복 호출에 안전하다. 프레임 처리 성공·예외·취소 시 Bitmap을 해제하며, 알림에서 캡처를 중지할 수 있다.
+연속된 같은 화면 전달은 세션별 메모리 픽셀 지문으로만 억제합니다. CP·HP 텍스트가 같아도 화면의 IV 바 픽셀이 다르면 별도 후보로 남깁니다. 지문·축소 이미지도 저장하지 않으며, 이것은 포켓몬 개체를 식별·병합하는 기능이 아닙니다.
 
-Android 14 이상에서는 최초 `onCapturedContentResize`의 실제 공유 영역 크기로 VirtualDisplay와 ImageReader를 맞춘다. 선택 앱의 크기가 전체 화면과 달라도 최초 구성을 허용하며, 동의 토큰이나 VirtualDisplay를 다시 생성하지 않는다. 이후 영역 크기가 바뀌면 대기 중인 스캔과 세션을 즉시 종료하고 방향·영역을 정한 뒤 새로 시작하도록 안내한다. 종료 요청은 서비스 파괴를 기다리지 않고 프레임 처리부터 취소하며, 취소된 작업의 결과를 표시하지 않는다.
+세션은 최대 10분이며 중지·일시 중지·취소된 OCR 결과를 차단합니다. 음성·영상 녹화 출력을 만들지 않습니다. App Group의 `CaptureIPC-v1`은 제어·상태·최대 12개의 짧은 후보를 공유하고, 후보의 10분 유효기간·파일 크기 제한·파일 보호·백업 제외를 적용합니다. 유효기간이 지난 후보의 반환 제외와 파일의 물리 삭제는 구분하며, 명시적 초기화로 대기 결과를 지웁니다.
 
-지원하는 모든 Android 버전에서 서비스의 `onConfigurationChanged`가 가로·세로 방향 변화를 감지하면 활성 캡처를 즉시 중지한다. 최초 방향은 서비스 `onCreate`에서 읽으며, 생성자에서 아직 연결되지 않은 Context의 리소스에 접근하지 않는다. Android 10~13에는 공유 영역 크기 콜백이 없어 방향이 그대로인 다중 창·공유 영역 변경은 수동 중지·재시작이 필요하다. 기기별 콜백 순서와 앱 공유 동작은 실제 기기에서 확인해야 하며, 게임 UI 스케일과 지원 화면 규격은 OCR 개발 시 고정한다. `FrameSink`는 호출 동안만 Bitmap을 사용하고 반환·취소 후 참조를 보관하지 않는다.
+## 보유 기록과 이름
 
-## 순위와 이름 제안
+- `ScanCandidate`는 휘발성 미확인 후보입니다. 확인한 `LinkedObservation`만 고정 ID의 `ScanRecord`에 연결합니다. 앱 ID는 게임의 고유 개체 ID가 아닙니다.
+- 같은 IV만으로 합치지 않습니다. 기존 개체 업데이트 또는 새 개체 추가를 사용자가 고릅니다. 업데이트는 제공하지 않은 값·닉네임·보호 상태를 보존합니다.
+- 네이티브 저장에는 확인한 수치·관측 출처·이름 적용 이력을 직렬화합니다. 후보의 OCR 원문·이미지·검토 중 이름 제안은 영구 컬렉션에 넣지 않습니다.
+- 미지원 스키마나 손상된 저장을 읽으면 원본을 보존하고 저장을 차단합니다. 원본 내보내기와 명시적 전체 삭제를 제공합니다.
+- 순위는 `owned-iv-v1`: 같은 종·폼의 IV 합 → 공격 → 방어 → 체력, 완전히 같은 IV는 공동 순위입니다. fixture 데이터 버전은 `fixture-v1`이며 종은 4종입니다.
+- 제안에는 목록·이름·보호·템플릿·종 데이터·정책 버전 스냅샷을 연결합니다. 복사·적용 직전 변경되었다면 다시 검토합니다. 보호 해제는 명시적 동작입니다.
+- 복사는 이력을 바꾸지 않습니다. 사용자의 게임 수동 적용 확인은 `user-confirmed`, 웹 연습은 `web-simulation`으로 기록합니다. 게임 상태를 자동 검증하는 기능은 없습니다.
 
-`rankOwned`는 종과 폼을 구분해 IV 합, 공격, 방어, 체력 순으로 비교한다. 동일 IV는 공동 순위다. `suggestOwnedNicknames`는 중복 스캔 ID와 없는 종을 거부하고 모든 확정 스캔의 이름 미리보기를 재계산한다. 실제 중복 개체 식별이나 저장을 수행하지는 않는다.
+## 빌드와 검증 경계
 
-PvP 캐시는 종 ID·폼 외에 기본 스탯·리그·최대 레벨을 키에 포함하며 최대 8개 테이블만 유지한다. 같은 종 데이터가 수정되어도 이전 계산을 잘못 재사용하지 않는다.
+`npm run build`는 공유 TS 패키지 빌드입니다. Metro의 Android·iOS JS 번들, Gradle의 Android 앱 빌드, Xcode의 호스트·확장 빌드는 각각 별도입니다. 웹은 Vite가 같은 RN 컴포넌트를 React Native Web으로 빌드합니다.
 
-## 열린 질문
+네이티브 서명과 App Group 프로비저닝은 개발자 환경에서 설정합니다. CI의 코드 서명 없는 시뮬레이터 빌드와 단위 테스트로 실시간 캡처·게임 인식·발열을 검증할 수는 없습니다.
 
-- 종 데이터 소스와 갱신 주기 (커뮤니티 게임 마스터 추출본)
-- 코어 ↔ 셸 호출 방식 (QuickJS 임베딩 vs Kotlin 이식)
-- OCR 엔진: ML Kit Text Recognition v2 기본, 숫자 전용 경량 모델 검토
+## 근거 문서
 
-
-
-저장과 Android 연결 전 강제할 계약은 [개발 가드](DEVELOPMENT_GUARDS.md)를 따른다. 현재 코어의 타입과 순수 함수가 Android의 영구 저장이나 브리지를 구현한 것은 아니다.
+- [React Native 0.88과 React 19.3](https://reactnative.dev/blog/2026/10/19/react-native-0.88)
+- [Apple ScreenCaptureKit](https://developer.apple.com/documentation/screencapturekit)
+- [iOS 화면 캡처 공식 샘플](https://developer.apple.com/documentation/screencapturekit/capturing-screen-content-on-ios)
+- [Android MediaProjection](https://developer.android.com/media/grow/media-projection)
+- [개발 계약](DEVELOPMENT_GUARDS.md) · [보안·기기 검증](SECURITY_REVIEW.md)

@@ -1,73 +1,88 @@
 ---
 version: alpha
 name: PoGo Lens
-description: Frosted field instrument for comparing a personal Pokémon collection.
+description: 보유 개체를 확인하고 비교하는 청록색 관측 렌즈.
 colors:
-  primary: "#A0E4EF"
   background: "#091923"
-  depth: "#163C4C"
+  surface: "#102839"
   text: "#F4FAFC"
-  muted: "#BBD0D8"
-  ink: "#102839"
+  muted: "#B5CBD5"
+  accent: "#A0E4EF"
+  warning: "#F7D49C"
+  danger: "#FFB3B8"
 typography:
   body:
-    fontFamily: "sans-serif"
-    fontSize: "14px"
+    fontFamily: "system"
+    fontSize: "15px"
   title:
-    fontFamily: "sans-serif-medium"
-    fontSize: "30px"
+    fontFamily: "system"
+    fontSize: "28px"
 rounded:
   panel: "24px"
-  control: "18px"
+  control: "16px"
 spacing:
-  page: "24px"
-  panel: "22px"
-  gap: "16px"
+  page: "20px"
+  panel: "20px"
+  gap: "18px"
 components:
-  permission-panel: {}
-  capture-button: {}
-  floating-bubble: {}
+  card: {}
+  button: {}
+  input: {}
+  choice: {}
+  notice: {}
 ---
 
-# PoGo Lens design system
+# PoGo Lens 디자인
 
-## Overview
+## 의도와 실행 소스
 
-Android 게임 화면을 확인하기 위한 작은 관측 렌즈. 한국어 사용자 대상의 개인 개발 도구다. 설정 화면에서 권한과 현재 상태를 이해한 뒤 게임으로 돌아가는 것이 화면의 역할이다.
+개체값을 확인하고 보유 목록을 비교하는 개인 도구입니다. 어두운 청록 배경, 반투명 패널, 밝은 얇은 테두리로 사용자가 요청한 glassmorphism을 표현합니다. 핵심 행동은 관측 → 값 확인 → 순위·이름 검토입니다.
 
-사용자가 요청한 glassmorphism을 짙은 청록 배경, 반투명 패널, 얇은 밝은 테두리로 구현한다. 실제 배경 블러나 게임 화면 전체 블러는 사용하지 않는다. 게임 위에는 56dp 원형 버튼만 표시한다. 미구현 순위·스캔 결과를 실제 데이터처럼 그리지 않는다.
+**공통 런타임 토큰은 `apps/mobile/src/ui/theme.ts`가 소유합니다.** `components.tsx`가 버튼·카드·선택·안내를 구성하고 `src/screens`가 화면을 조합합니다. React Native Web도 같은 컴포넌트를 사용하며 웹 전용 컨테이너는 `apps/mobile/web/style.css`가 담당합니다. 이 문서는 실행 코드를 생성하지 않습니다.
 
-토큰 소유권은 Model B다. `apps/android/app/src/main/res/values/colors.xml`과 `themes.xml`이 런타임 소스이고 이 문서는 의도를 설명한다. 색 → drawable/theme → layout 순서로 참조한다. 웹 CSS나 별도 프레임워크는 추가하지 않는다.
+## 색
 
-## Colors
+| 토큰                      | 값                    | 역할                |
+| ------------------------- | --------------------- | ------------------- |
+| `background`              | `#091923`             | 기본 배경·입력 면   |
+| `surface`                 | `#102839`             | 하단 탭 표면        |
+| `panel`                   | `rgba(29,57,73,0.72)` | 반투명 카드         |
+| `text` / `muted`          | `#F4FAFC` / `#B5CBD5` | 본문·보조 설명      |
+| `accent` / `ink`          | `#A0E4EF` / `#102839` | 주요 행동·버튼 글자 |
+| `border` / `brightBorder` | 밝은 청록 28% / 54%   | 면과 선택의 경계    |
+| `warning` / `danger`      | `#F7D49C` / `#FFB3B8` | 주의·오류           |
 
-`lens_background`는 기본 배경, `lens_depth`는 배경 그라데이션, `lens_glass`는 ARGB #B8203948, `lens_stroke`는 ARGB #668CB4C4다. 본문은 `lens_text`, 보조 문장은 `lens_muted`, 주요 버튼은 `lens_accent` 바탕에 `lens_ink` 글자를 사용한다. 장식용 투명도를 본문 텍스트에 적용하지 않는다.
+상태는 문구·선택점·비활성 상태를 함께 사용합니다. 색만으로 지원 여부나 오류를 전달하지 않습니다. 실제 기기의 투명 합성 대비와 스크린리더 검증은 별도입니다.
 
-## Typography
+## 글자와 배치
 
-Android 시스템 sans를 사용해 한국어 글리프와 사용자의 글자 크기 설정을 따른다. 헤드라인 30sp, 패널 제목 20sp, 본문 14sp, 버튼 15sp다. 외부 폰트 다운로드는 없다. 숫자 중심 결과 화면의 글꼴은 해당 기능 구현 때 검증한다.
+시스템 글꼴을 사용하고 외부 폰트를 요청하지 않습니다. 화면 제목 28/38, 카드 제목 19/28, 본문 15/24, 보조 13/21, 입력 17의 크기/줄 높이를 기본으로 합니다. 숫자 순위는 표 형식 숫자를 사용합니다.
 
-## Layout
+화면은 관측·내 보유 목록·설정의 3탭입니다. Safe Area를 반영하고 각 화면의 ScrollView가 세로 스크롤을 소유합니다. 페이지·패널 여백은 20, 주요 간격은 18입니다. 탭 전환 시 작성 중인 입력을 보존하고 숨긴 화면은 접근성 탐색에서 제외합니다.
 
-단일 ScrollView가 스크롤을 소유한다. 페이지 24dp, 패널 내부 22dp, 패널 간 16dp다. 시스템 바 inset을 반영하고 고정 높이 텍스트 영역을 두지 않는다. 작은 화면과 큰 글자에서도 버튼에 도달할 수 있어야 한다.
+고정 높이의 본문이나 글자 크기 제한을 두지 않습니다. 주요 버튼 최소 높이는 50, 선택 행은 52, 필터는 46입니다. 긴 라벨은 줄바꿈합니다. 큰 글자·작은 기기의 실제 조합은 검증 목록에 남깁니다.
 
-## Elevation & Depth
+## 면과 모양
 
-위계는 테두리와 명도로 만든다. 패널 24dp 모서리와 반투명 채움으로 유리 느낌을 내며, 무거운 블러·그림자·상시 애니메이션은 피한다. 이 방식은 게임 실행 중 불필요한 렌더링 비용을 줄인다.
+카드 반경은 24, 버튼 16, 입력 13입니다. 렌즈 표식은 중첩 원으로 그려 외부 이미지에 의존하지 않습니다. 반투명 채움·테두리·명도로 깊이를 만들며 무거운 실시간 배경 블러나 상시 애니메이션은 사용하지 않습니다.
 
-## Shapes
+## 상호작용
 
-패널 24dp, 버튼 18dp, 플로팅 버튼 56dp 원형이다. 터치 영역은 최소 48dp를 유지한다.
+- `Button`: 눌림·비활성·작업 중 상태와 접근성 설명을 공유합니다.
+- `Choice`: 전체 행이 선택 영역이며 라디오 의미·선택 상태를 전달합니다. 같은 IV의 기존/새 개체는 기본 선택 없이 직접 고릅니다.
+- 입력: 미확인 IV는 빈칸입니다. 제출 시 오류를 표시하고 잘못된 IV 입력으로 초점을 이동합니다.
+- `Notice`: 중요한 오류를 화면에 남기고 alert/live region 의미를 제공합니다.
+- 삭제·보호 해제: 네이티브는 Alert, 웹은 명시적 확인창을 사용합니다. 손상된 원본은 자동으로 덮어쓰지 않습니다.
+- 이름 검토: 복사와 적용 확인은 별도 행동입니다. 직접 고친 이름의 보호 선택을 보여 줍니다.
 
-## Components
+## 플랫폼과 상태 문구
 
-권한 설정과 캡처 제어는 기존 MainActivity, 상태는 OverlayService의 StateFlow가 소유한다. Android 기본 ScrollView, MaterialButton과 시스템 권한 대화상자를 재사용한다. 한국어 문구는 strings.xml이 소유한다.
+Android는 플로팅 캡처, iOS는 시스템 화면 공유 경로를 안내합니다. 실제 어댑터의 지원·권한·실행 상태를 표시하며 성공한 것처럼 가상 상태를 만들지 않습니다.
 
-주요 버튼은 시작·중지 행동을 표시한다. 준비 중에는 비활성화하고 상태 문구를 읽어 준다. 보조 버튼은 권한 설정을 연다. MaterialButton의 pressed/focus/disabled 상태를 유지한다. 플로팅 버튼은 pressed/focus 테두리 상태와 접근성 설명을 갖는다. 성공·실패 피드백은 현재 Toast를 쓰되 중요한 실행 상태는 화면에도 표시한다.
+웹은 항상 게임 연결이 없는 체험임을 알립니다. 실제 계산과 웹 이름 입력 연습은 제공하지만 캡처·게임 적용을 재현 성공으로 표시하지 않습니다. 기록의 탭 메모리·새로고침 초기화도 안내합니다.
 
-## Do's and Don'ts
+모든 플랫폼에서 샘플 종 4종의 현재 범위를 명시합니다. OCR 후보와 확인된 수치, 제안한 이름과 기록된 이름을 구분하며 자동 게임 조작을 암시하지 않습니다.
 
-- 권한의 목적과 현재 구현 범위를 먼저 설명한다.
-- 실제 캡처 이미지를 설정 배경이나 로그에 쓰지 않는다.
-- 미구현 기능, 가상 순위, 테스트 수치를 제품 화면에 표시하지 않는다.
-- 작은 화면·200% 글자 크기·TalkBack은 실제 기기에서 별도 검증한다.
+## 검증
+
+자동 UI 검사는 입력·중복·보호·복사/적용·웹 연습·삭제 동작을 다룹니다. 렌더러 테스트와 웹 화면 확인을 네이티브 기기의 디자인·접근성 검증으로 확대 해석하지 않습니다. 큰 글자·TalkBack·VoiceOver·키보드·화면 회전은 [기기 검증](docs/SECURITY_REVIEW.md)에서 확인합니다.
