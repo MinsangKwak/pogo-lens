@@ -40,6 +40,8 @@ iOS에서 게임 위의 임의 오버레이나 게임 조작을 제공하지 않
 
 프로젝트에는 호스트와 내장 방송 확장 타깃, App Group entitlement, extension Info.plist, 개인정보 매니페스트가 포함돼 있다. UIKit·ReplayKit·Vision·ScreenCaptureKit 연결은 실제 SDK 빌드와 기기 검증이 모두 필요하다.
 
+`pod install` 후에는 리소스 번들을 포함한 모든 Pod 타깃의 최소 iOS 버전을 앱 지원 하한인 15.1 이상으로 맞춘다. 이미 더 높은 버전을 요구하는 의존성의 설정은 유지한다. Xcode 27 시뮬레이터가 지원하지 않는 낮은 리소스 타깃을 그대로 남기지 않으며, 배포 버전 경고를 숨기지 않는다.
+
 ```sh
 swiftc CaptureShared/PokemonFrameText.swift CaptureShared/CaptureFrameFingerprint.swift CaptureShared/CaptureDedupPolicy.swift CaptureSharedTests/main.swift -o /tmp/pogo-frame-text-check
 /tmp/pogo-frame-text-check
