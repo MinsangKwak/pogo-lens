@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["react", "react-dom", "node", "vite/client"],
+    "moduleSuffixes": [".web", ""],
+    "skipLibCheck": true
+  },
+  "include": ["App.tsx", "src/**/*.ts", "src/**/*.tsx", "web/**/*.tsx", "vite.config.mts"],
+  "exclude": ["**/node_modules", "**/Pods", "**/__tests__/**", "**/*.test.ts", "**/*.test.tsx", "android", "ios"]
+}
