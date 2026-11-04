@@ -1,0 +1,28 @@
+{
+  "extends": "@react-native/typescript-config",
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/Pods",
+    "src/**/*.web.ts",
+    "src/**/*.web.tsx",
+    "web",
+    "vite.config.mts"
+  ],
+  "compilerOptions": {
+    "paths": {
+      "@pogo-lens/core": [
+        "../../packages/core/src/index.ts"
+      ],
+      "@pogo-lens/workflow": [
+        "../../packages/workflow/src/index.ts"
+      ]
+    },
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true
+  }
+}
