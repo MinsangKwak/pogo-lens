@@ -29,9 +29,10 @@ class ScreenCapture(
     private val onStopped: (CaptureStopReason) -> Unit,
 ) {
     private val handler = Handler(Looper.getMainLooper())
-    private val projection: MediaProjection =
+    private val projection: MediaProjection = checkNotNull(
         context.getSystemService(MediaProjectionManager::class.java)
-            .getMediaProjection(resultCode, resultData)
+            .getMediaProjection(resultCode, resultData),
+    ) { "MediaProjection consent is missing or no longer valid" }
     private var reader: ImageReader? = null
     private var display: VirtualDisplay? = null
     private var pending: CancellableContinuation<Bitmap?>? = null
