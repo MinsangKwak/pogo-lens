@@ -14,9 +14,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  core:
+  javascript:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -27,14 +27,23 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - run: npm run bundle:android
+      - run: npm run bundle:ios
+      - run: npm run typecheck:web -w @pogo-lens/mobile
+      - run: npm run build:web -w @pogo-lens/mobile
 
   android:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
@@ -45,8 +54,34 @@ jobs:
           accept-android-sdk-licenses: true
           log-accepted-android-sdk-licenses: false
       - name: Install Android SDK packages
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+        run: sdkmanager 'platforms;android-37' 'build-tools;37.0.0' 'ndk;27.1.12297006' 'cmake;3.22.1'
       - name: Check Android
-        working-directory: apps/android
-        run: bash gradlew --no-daemon testDebugUnitTest lintDebug assembleDebug
+        working-directory: apps/mobile/android
+        run: bash gradlew --no-daemon -PreactNativeArchitectures=arm64-v8a testDebugUnitTest lintDebug assembleDebug
 
+
+  ios:
+    runs-on: xcode-27
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Check capture privacy filter
+        run: |
+          swiftc apps/mobile/ios/CaptureShared/PokemonFrameText.swift apps/mobile/ios/CaptureShared/CaptureFrameFingerprint.swift apps/mobile/ios/CaptureShared/CaptureDedupPolicy.swift apps/mobile/ios/CaptureSharedTests/main.swift -o "$RUNNER_TEMP/pogo-frame-text-check"
+          "$RUNNER_TEMP/pogo-frame-text-check"
+      - name: Install Ruby dependencies
+        working-directory: apps/mobile
+        run: bundle install --jobs 4 --retry 2
+      - name: Install CocoaPods
+        working-directory: apps/mobile
+        run: bundle exec pod install --project-directory=ios
+      - name: Build iOS simulator app and broadcast extension
+        working-directory: apps/mobile/ios
+        run: xcodebuild -workspace PogoLens.xcworkspace -scheme PogoLens -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
