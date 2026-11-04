@@ -26,7 +26,7 @@ Metro를 실행한 채 다른 터미널에서 플랫폼 명령을 실행합니�
 
 ## Android
 
-JDK 17, Android SDK Platform 37·Build Tools 37.0.0, NDK 27.1.12297006·CMake 3.22.1을 준비합니다. 현재 최소 타깃은 API 29(Android 10)이며, 모든 해당 기기의 실사용 검증 완료를 뜻하지 않습니다.
+JDK 17, Android SDK Platform 36·Build Tools 36.0.0, NDK 27.1.12297006·CMake 3.22.1을 준비합니다. 현재 최소 타깃은 API 29(Android 10)이며, 모든 해당 기기의 실사용 검증 완료를 뜻하지 않습니다.
 
 ```bash
 npm run android

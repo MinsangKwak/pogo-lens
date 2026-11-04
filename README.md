@@ -77,7 +77,7 @@ npm run build:web -w @pogo-lens/mobile
 
 `npm run check`는 JS/TS lint·타입·단위 테스트와 공유 패키지 빌드를 실행합니다. `npm run build`는 `core`와 `workflow`만 빌드하며 APK·iOS 앱을 만들지 않습니다. Metro 번들, Android 네이티브 빌드, iOS 네이티브 빌드와 실기기 테스트는 별도입니다.
 
-현재 자동 검사는 계산·워크플로·UI 이벤트·저장·브리지·Android 캡처 정책을 다룹니다. 최종 커밋의 원격 검사 결과는 [GitHub Actions](https://github.com/MinsangKwak/pogo-lens/actions)에서 확인합니다. RN 전환의 원격 네이티브 CI와 실제 기기·게임 검증은 문서 작성 시점에 완료로 표시하지 않았습니다.
+현재 자동 검사는 계산·워크플로·UI 이벤트·저장·브리지·Android 캡처 정책을 다룹니다. 대상 커밋의 원격 검사 결과는 [GitHub Actions](https://github.com/MinsangKwak/pogo-lens/actions)에서 확인합니다. 네이티브 CI의 컴파일 성공과 실제 기기·게임에서의 캡처 검증은 별도로 확인해야 합니다.
 
 [아키텍처](docs/ARCHITECTURE.md) · [디자인](DESIGN.md) · [개발 계약](docs/DEVELOPMENT_GUARDS.md) · [보안과 기기 검증](docs/SECURITY_REVIEW.md) · [로드맵](docs/ROADMAP.md) · [소스코드](https://github.com/MinsangKwak/pogo-lens)
 
