@@ -2,20 +2,26 @@
   "name": "pogo-lens",
   "private": true,
   "version": "0.1.0",
-  "description": "Android overlay for Pokémon GO that reads IVs from the screen, ranks your own Pokémon, and suggests nicknames. Kotlin shell + TypeScript core.",
+  "description": "React Native companion for Pok\u00e9mon GO: shared IV ranking and nickname workflow, Android overlay and iOS screen capture.",
   "type": "module",
   "workspaces": [
-    "packages/core"
+    "packages/core",
+    "packages/workflow",
+    "apps/mobile"
   ],
   "scripts": {
-    "lint": "npm run lint -w @pogo-lens/core",
-    "typecheck": "npm run typecheck -w @pogo-lens/core",
-    "test": "npm run test -w @pogo-lens/core",
-    "build": "npm run build -w @pogo-lens/core",
-    "check": "npm run lint && npm run typecheck && npm test && npm run build"
+    "lint": "npm run lint -w @pogo-lens/core && npm run lint -w @pogo-lens/workflow && npm run lint -w @pogo-lens/mobile",
+    "typecheck": "npm run typecheck -w @pogo-lens/core && npm run typecheck -w @pogo-lens/workflow && npm run typecheck -w @pogo-lens/mobile",
+    "test": "npm test -w @pogo-lens/core && npm test -w @pogo-lens/workflow && npm test -w @pogo-lens/mobile -- --runInBand",
+    "build": "npm run build -w @pogo-lens/core && npm run build -w @pogo-lens/workflow",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build",
+    "start": "npm start -w @pogo-lens/mobile",
+    "android": "npm run android -w @pogo-lens/mobile",
+    "ios": "npm run ios -w @pogo-lens/mobile",
+    "bundle:android": "npm run bundle:android -w @pogo-lens/mobile",
+    "bundle:ios": "npm run bundle:ios -w @pogo-lens/mobile"
   },
   "engines": {
     "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
   }
 }
-
