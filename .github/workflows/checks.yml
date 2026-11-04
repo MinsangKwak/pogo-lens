@@ -54,7 +54,7 @@ jobs:
           accept-android-sdk-licenses: true
           log-accepted-android-sdk-licenses: false
       - name: Install Android SDK packages
-        run: sdkmanager 'platforms;android-37' 'build-tools;37.0.0' 'ndk;27.1.12297006' 'cmake;3.22.1'
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.1.12297006' 'cmake;3.22.1'
       - name: Check Android
         working-directory: apps/mobile/android
         run: bash gradlew --no-daemon -PreactNativeArchitectures=arm64-v8a testDebugUnitTest lintDebug assembleDebug
